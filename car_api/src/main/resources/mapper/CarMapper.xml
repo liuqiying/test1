@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fh.mapper.CarMapper">
+
+    <select id="queryList" resultMap="MapList" parameterType="page">
+        select c.*,CONCAT(IFNULL(d1.`name`,""),IF(d2.`name` is null,"",","),IFNULL(d2.`name`,""),IF(d3.`name` is
+        null,"",","),IFNULL(d3.`name`,""),IF(d4.`name` is null,"",","),IFNULL(d4.`name`,"")) 'deploy',
+        CONCAT(IFNULL(a1.`name`,""),IF(a2.`name` is null,"",","),IFNULL(a2.`name`,"")) 'area'
+        from t_car c LEFT JOIN t_deploy d1 ON c.did1 = d1.id
+        LEFT JOIN t_deploy d2 ON c.did2 = d2.id
+        LEFT JOIN t_deploy d3 ON c.did3 = d3.id
+        LEFT JOIN t_deploy d4 ON c.did4 = d4.id
+        LEFT JOIN t_area a1 ON c.aid1 = a1.id
+        LEFT JOIN t_area a2 ON c.aid2 = a2.id
+        limit #{start},#{length}
+    </select>
+
+    <update id="updateCar" parameterType="car">
+        update t_car set
+        name=#{name},type=#{type},did1=#{did1},did2=#{did2},did3=#{did3},did4=#{did4},aid1=#{aid1},aid2=#{aid2} where
+        id=#{id}
+    </update>
+
+    <resultMap id="MapList" type="Map">
+        <result property="id" column="id"></result>
+        <result property="name" column="name"></result>
+        <result property="type" column="type"></result>
+        <result property="deploy" column="deploy"></result>
+        <result property="area" column="area"></result>
+    </resultMap>
+
+</mapper>
