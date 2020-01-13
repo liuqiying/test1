@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE">
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="js/bootstrap3/css/bootstrap.css" rel="stylesheet">
+    <link href="js/bootstrap3/css/bootstrap-theme.css" rel="stylesheet">
+    <link href="js/bootstrap-datetimepicker/css/bootstrap-datetimepicker.css" rel="stylesheet">
+    <link href="js/DataTables/DataTables-1.10.18/css/dataTables.bootstrap.css" rel="stylesheet">
+    <link href="js/fileinput5/css/fileinput.css" rel="stylesheet">
+    <link href="js/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/bootstrap3/js/bootstrap.js"></script>
+    <script src="js/DataTables/DataTables-1.10.18/js/jquery.dataTables.js"></script>
+    <script src="js/DataTables/DataTables-1.10.18/js/dataTables.bootstrap.js"></script>
+    <script src="js/bootstrap-datetimepicker/js/moment-with-locales.js"></script>
+    <script src="js/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="js/bootbox/bootbox.min.js"></script>
+    <script src="js/fileinput5/js/fileinput.js"></script>
+    <script src="js/fileinput5/js/locales/zh.js"></script>
+    <script src="js/bootstrap-validator/js/bootstrapValidator.min.js"></script>
+
+    <script>
+        $(function () {
+            initDataTable();
+        })
+
+        function initDataTable() {
+            $('#example').DataTable({
+                "pagingType": "simple_numbers",
+                "lengthMenu": [[3, 6, 9], [3, 6, 9]],
+                "serverSide": true,
+                "searching": false,//启用搜索功能
+                "ordering": false, // 禁止排序
+                "ajax": {
+                    url: 'http://localhost:8080/car/queryList.action',
+                    type: 'POST',
+                    "dataSrc": function (result) {
+                        if (result.status == 200) {
+                            result.draw = result.data.draw;
+                            result.recordsTotal = result.data.recordsTotal;
+                            result.recordsFiltered = result.data.recordsFiltered;
+                            return result.data.data;
+                        } else {
+                            return "";
+                        }
+                    },
+                    "data": function (d) {
+                        //添加额外的参数传给服务器
+                    }
+                },
+                "columns": [
+                    {"data": "id"},
+                    {"data": "name"},
+                    {"data": "type"},
+                    {"data": "deploy"},
+                    {"data": "area"},
+                    {
+                        "data": null, render: function (data, type, row, meta) {
+                            var id = '"' + data.id + '"';
+                            return "<button type='button' class='btn btn-warning' onclick='updateCar(" + id + ")'>修改</button>"
+                        }
+                    }
+                ],
+                language: {
+                    "sProcessing": "处理中...",
+                    "sLengthMenu": "显示 _MENU_ 项结果",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "首页",
+                        "sPrevious": "上页",
+                        "sNext": "下页",
+                        "sLast": "末页"
+                    },
+                    "oAria": {
+                        "sSortAscending": ": 以升序排列此列",
+                        "sSortDescending": ": 以降序排列此列"
+                    }
+                }
+            });
+        };
+
+        function addCar() {
+            bootbox.dialog({
+                message: $("#carScript").html(),
+                title: "新增汽车",
+                buttons: {
+                    OK: {
+                        label: "确认",
+                        className: "btn-primary",
+                        callback: function () {
+                            $.post(
+                                "http://localhost:8080/car/addCar.action",
+                                $("#carFrom").serialize(),
+                                function (data) {
+                                    if (data.status == 200) {
+                                        queryList();
+                                    } else {
+                                        bootbox.alert({
+                                            buttons: {
+                                                ok: {
+                                                    label: '确认',
+                                                    className: 'btn-primary'
+                                                }
+                                            },
+                                            message: '修改失败，请联系管理员！',
+                                            callback: function () {
+                                            },
+                                            title: "提示信息"
+                                        });
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                Cancel: {
+                    label: "取消",
+                    className: "btn-default",
+                    callback: function () {
+
+                    }
+                }
+            });
+
+            getPidByArea(0, null, 1);
+        }
+
+        function queryList() {
+            $("#example").dataTable().fnDraw(true);
+        }
+
+        function updateCar(id) {
+            bootbox.dialog({
+                message: $("#carScript").html(),
+                title: "修改汽车信息",
+                buttons: {
+                    Cancel: {
+                        label: "取消",
+                        className: "btn-default",
+                        callback: function () {
+
+                        }
+                    },
+                    OK: {
+                        label: "确认",
+                        className: "btn-primary",
+                        callback: function () {
+                            $.post(
+                                "http://localhost:8080/car/updateCar.action",
+                                $("#carFrom").serialize(),
+                                function (data) {
+                                    if (data.status == 200) {
+                                        queryList();
+                                    } else {
+                                        bootbox.alert({
+                                            buttons: {
+                                                ok: {
+                                                    label: '确认',
+                                                    className: 'btn-primary'
+                                                }
+                                            },
+                                            message: '修改失败，请联系管理员！',
+                                            callback: function () {
+                                            },
+                                            title: "提示信息"
+                                        });
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            })
+
+            getIdByCar(id);
+        }
+
+        function getIdByCar(id) {
+            $.post(
+                "http://localhost:8080/car/getIdByCar.action",
+                {"id": id},
+                function (data) {
+                    if (data.status == 200) {
+                        var data = data.data;
+                        $("#id").val(id);
+                        $("#name").val(data.name);
+                        $("#type").val(data.type);
+
+                        if (data.did1 != null) {
+                            document.getElementById("did1").checked = true;
+                        }
+                        if (data.did2 != null) {
+                            document.getElementById("did2").checked = true;
+                        }
+                        if (data.did3 != null) {
+                            document.getElementById("did3").checked = true;
+                        }
+                        if (data.did4 != null) {
+                            document.getElementById("did4").checked = true;
+                        }
+
+                        updateArea(0, 1, data.aid1);
+                        if (data.aid2 != null) {
+                            updateArea(data.aid1, 2, data.aid2);
+                        }
+                    }
+                }
+            )
+        }
+
+        function getPidByArea(pId, obj, a) {
+            //清除当前节点的父节点 之后的节点
+            $(obj).parent().nextAll().remove();
+            if (pId != -1) {
+                $.post(
+                    "http://localhost:8080/car/getPidByArea.action",
+                    {"pid": pId},
+                    function (result) {
+                        if (result.data.length > 0 && result.status == 200) {
+                            var data = result.data;
+                            var str = "<div class=\"col-sm-4\">\n" +
+                                "            <select class=\"form-control\" name=\"aid" + (a++) + "\" onchange=\"getPidByArea(this.value,this," + a + ")\">\n" +
+                                "                <option value=\"-1\">---请选择---</option>\n";
+                            for (var i = 0; i < data.length; i++) {
+                                str += "<option value='" + data[i].id + "'>" + data[i].name + "</option>"
+                            }
+                            str += "</select>\n" +
+                                " </div>"
+                            $("#areaDiv").append(str);
+                        }
+                    }
+                )
+            }
+        }
+
+        function updateArea(pId, a, id) {
+            $.ajax({
+                url: "http://localhost:8080/car/getPidByArea.action",
+                dataType: "json",
+                data: {"pid": pId},
+                async: false,
+                success: function (result) {
+                    if (result.data.length > 0 && result.status == 200) {
+                        var data = result.data;
+                        var str = "<div class=\"col-sm-4\">\n" +
+                            "            <select class=\"form-control\" name=\"aid" + (a++) + "\" onchange=\"getPidByArea(this.value,this," + a + ")\">\n" +
+                            "                <option value=\"-1\">---请选择---</option>\n";
+                        for (var i = 0; i < data.length; i++) {
+                            if (data[i].id == id) {
+                                str += "<option selected value='" + data[i].id + "'>" + data[i].name + "</option>"
+                            } else {
+                                str += "<option value='" + data[i].id + "'>" + data[i].name + "</option>"
+                            }
+                        }
+                        str += "</select>\n" +
+                            " </div>"
+                        $("#areaDiv").append(str);
+                    }
+                }
+            })
+        }
+
+    </script>
+
+    <script type="text/html" id="carScript">
+        <form class="form-horizontal" style="margin-top: 20px" id="carFrom" method="post">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">汽车名称</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="name" name="name">
+                    <input type="hidden" id="id" name="id">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">汽车品牌</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="type" name="type">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">汽车配置</label>
+                <div class="col-sm-9">
+                    <input type="checkbox" name="did1" id="did1" value="1"> <label class="control-label"> 一键启动</label>
+                    <input type="checkbox" name="did2" id="did2" value="2"> <label class="control-label"> 全景天窗</label>
+                    <input type="checkbox" name="did3" id="did3" value="3"> <label class="control-label"> 座椅加热</label>
+                    <input type="checkbox" name="did4" id="did4" value="4"> <label class="control-label"> 车感平衡</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">生产地区</label>
+                <div id="areaDiv">
+
+                </div>
+            </div>
+        </form>
+    </script>
+</head>
+<body>
+<div style="margin-right: 20px;margin-left: 20px;margin-top: 20px">
+    <button type="button" onclick="addCar()"> 新增</button>
+</div>
+<div class="panel panel-primary" style="margin-right: 20px;margin-left: 20px;margin-top: 20px">
+    <div class="panel-heading">汽车展示</div>
+    <div class="panel-body">
+        <div class="bs-example" data-example-id="bordered-table">
+            <table class="table table-striped table-bordered" id="example" style="width:100%">
+                <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>汽车名称</td>
+                    <td>汽车品牌</td>
+                    <td>汽车配置</td>
+                    <td>生产地区</td>
+                    <td>操作</td>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
